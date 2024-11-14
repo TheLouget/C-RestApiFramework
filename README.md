@@ -22,13 +22,13 @@ Biblioteca C++ REST API trebuie să ofere un set de funcționalități esențial
 ###    3. Suport pentru Fișiere:
         ◦ Funcții pentru upload și download de fișiere prin cereri POST și GET.
         ◦ Un mecanism simplificat pentru a stoca fișiere pe server și a le accesa în mod securizat.
-##4. Gestionarea Resurselor și Rutarea
+##     4. Gestionarea Resurselor și Rutarea
 ###    1. Router REST:
         ◦ O funcționalitate de rutare care mapează endpoint-urile URL la funcții specifice, permițând definirea structurilor CRUD (Create, Read, Update, Delete) pentru resurse.
         ◦ Suport pentru rute dinamice și parametrizate (e.g., /api/resource/{id}).
 ###    2. Mapare CRUD:
         ◦ Funcționalități predefinite pentru operațiile CRUD asupra resurselor, ușor de configurat și adaptat la nevoile serverului REST.
-##5. Funcționalități de Gestionare a Erorilor
+##    5. Funcționalități de Gestionare a Erorilor
 ###     Handler pentru Erori HTTP:
         ◦ Mecanisme pentru gestionarea erorilor HTTP frecvente, cu coduri de eroare personalizabile și răspunsuri informative (e.g., 400 - Bad Request, 404 - Not Found, 500 - Internal Server Error).
         ◦ Logare automată a erorilor și opțiunea de a transmite mesaje de eroare personalizate.
