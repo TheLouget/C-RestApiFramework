@@ -1,6 +1,8 @@
 # C-RestApiFramework
 ##    1. Introducere
-Biblioteca C++ REST API trebuie să ofere un set de funcționalități esențiale pentru dezvoltarea serverelor web REST API, incluzând gestionarea cererilor HTTP, manipularea conexiunilor, suport pentru mai multe metode HTTP și un mecanism eficient de procesare a cererilor multiple. Aceasta va fi concepută modular pentru a permite integrarea ușoară și reutilizarea în aplicații diferite.
+Biblioteca C++ REST API trebuie să ofere un set de funcționalități esențiale pentru dezvoltarea serverelor web REST API, incluzând gestionarea cererilor HTTP,
+manipularea conexiunilor, suport pentru mai multe metode HTTP și un mecanism eficient de procesare a cererilor multiple. Aceasta va fi concepută modular pentru
+a permite integrarea ușoară și reutilizarea în aplicații diferite.
 ##   2. Cerințe funcționale
 ###    1. Biblioteca principală REST API:
         ◦ O bibliotecă modulară care gestionează cererile și răspunsurile HTTP.
@@ -24,11 +26,13 @@ Biblioteca C++ REST API trebuie să ofere un set de funcționalități esențial
         ◦ Un mecanism simplificat pentru a stoca fișiere pe server și a le accesa în mod securizat.
 ##     4. Gestionarea Resurselor și Rutarea
 ###    1. Router REST:
-        ◦ O funcționalitate de rutare care mapează endpoint-urile URL la funcții specifice, permițând definirea structurilor CRUD (Create, Read, Update, Delete) pentru resurse.
+        ◦ O funcționalitate de rutare care mapează endpoint-urile URL la funcții specifice, permițând definirea structurilor CRUD (Create, Read, Update,
+        Delete) pentru resurse.
         ◦ Suport pentru rute dinamice și parametrizate (e.g., /api/resource/{id}).
 ###    2. Mapare CRUD:
         ◦ Funcționalități predefinite pentru operațiile CRUD asupra resurselor, ușor de configurat și adaptat la nevoile serverului REST.
 ##    5. Funcționalități de Gestionare a Erorilor
 ###     Handler pentru Erori HTTP:
-        ◦ Mecanisme pentru gestionarea erorilor HTTP frecvente, cu coduri de eroare personalizabile și răspunsuri informative (e.g., 400 - Bad Request, 404 - Not Found, 500 - Internal Server Error).
+        ◦ Mecanisme pentru gestionarea erorilor HTTP frecvente, cu coduri de eroare personalizabile și răspunsuri informative 
+        (e.g., 400 - Bad Request, 404 - Not Found, 500 - Internal Server Error).
         ◦ Logare automată a erorilor și opțiunea de a transmite mesaje de eroare personalizate.
