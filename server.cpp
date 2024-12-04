@@ -37,11 +37,13 @@ public:
 
     void run() {
         std::vector<std::thread> threads;
-        for (int i = 0; i < std::thread::hardware_concurrency(); ++i) {
+        for (int i = 0; i < std::thread::hardware_concurrency(); ++i) 
+        {
             threads.emplace_back([this]() { io_context_.run(); });
         }
 
-        for (auto& thread : threads) {
+        for (auto& thread : threads) 
+        {
             thread.join();
         }
     }
@@ -101,6 +103,7 @@ private:
         std::cerr << "Exception in thread: " << e.what() << "\n";
     }
 }
+
     boost::asio::io_context io_context_;
     tcp::acceptor acceptor_;
     Router& router_;
@@ -109,12 +112,43 @@ private:
 int main() 
 {
     Router router;
-    router.add_route("GET", "/hello", [](const std::string& method, const std::string& req, std::string& resp) {
-        resp = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
-    });
+    router.add_route("GET", "/interactive", [](const std::string& method, const std::string& req, std::string& resp) {
+        // HTML, CSS, și JavaScript pentru a crea un efect interactiv
+        std::string html_response = 
+            "<!DOCTYPE html>"
+            "<html lang=\"en\">"
+            "<head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Pagini Interactive</title>"
+            "<style>"
+            "body { text-align: center; font-family: Arial, sans-serif; padding: 50px; }"
+            ".color-box { width: 100px; height: 100px; background-color: red; margin: 20px auto; }"
+            "</style></head>"
+            "<body>"
+            "<h1>Schimbă Culoarea Cu JavaScript</h1>"
+            "<p>Fă clic pe butonul de mai jos pentru a schimba culoarea căsuței.</p>"
+            "<div class=\"color-box\" id=\"box\"></div>"
+            "<button onclick=\"changeColor()\">Schimbă Culoarea</button>"
+            "<script>"
+            "function changeColor() {"
+            "    var box = document.getElementById('box');"
+            "    var colors = ['red', 'blue', 'green', 'yellow', 'orange'];"
+            "    var currentColor = box.style.backgroundColor;"
+            "    var newColor = colors[Math.floor(Math.random() * colors.length)];"
+            "    while (newColor === currentColor) {"
+            "        newColor = colors[Math.floor(Math.random() * colors.length)];"
+            "    }"
+            "    box.style.backgroundColor = newColor;"
+            "}"
+            "</script>"
+            "</body>"
+            "</html>";
 
-    router.add_route("POST", "/data", [](const std::string& method, const std::string& req, std::string& resp) {
-        resp = "HTTP/1.1 200 OK\r\nContent-Length: 7\r\n\r\nReceived";
+        // Calculăm Content-Length din dimensiunea răspunsului HTML
+        std::string content_length = "Content-Length: " + std::to_string(html_response.size()) + "\r\n";
+
+        resp = "HTTP/1.1 200 OK\r\n"
+               "Content-Type: text/html; charset=UTF-8\r\n" +
+               content_length + "\r\n" +
+               html_response;
     });
 
     try {
