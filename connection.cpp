@@ -54,14 +54,14 @@ void Connection::acceptconnection()
  
 }
 
-void Connection::receive(char * client_message,int nrofbytes)
-{
+void Connection::receive(char* client_message, int nrofbytes) {
     memset(client_message, '\0', nrofbytes);
-    if (recv(this->clientsock, client_message, nrofbytes, 0) < 0){
+    ssize_t bytes_received = recv(this->clientsock, client_message, nrofbytes, 0);
+    if (bytes_received < 0) {
         printf("Couldn't receive\n");
-        return ;
+        return;
     }
-    printf("Msg from client: %s\n", client_message);
+    printf("Msg from client: %s\n", client_message);  // Afișăm mesajul primit
 }
 
 void Connection::sendresponse(char * server_message)

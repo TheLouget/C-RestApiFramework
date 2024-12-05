@@ -36,16 +36,17 @@ public:
     }
 
     void run() {
-        std::vector<std::thread> threads;
-        for (int i = 0; i < std::thread::hardware_concurrency(); ++i) 
-        {
-            threads.emplace_back([this]() { io_context_.run(); });
-        }
+        // Obține numărul de fire pe baza numărului de nuclee hardware
+        unsigned int num_threads = std::thread::hardware_concurrency();
+        if (num_threads == 0) num_threads = 2;
 
-        for (auto& thread : threads) 
-        {
-            thread.join();
-        }
+        MyThreads thread_pool(num_threads);
+
+        // Rulează `io_context_` în mai multe fire
+        thread_pool.run([this]() { io_context_.run(); });
+
+        // Așteaptă finalizarea tuturor firelor
+        thread_pool.join();
     }
 
 private:
@@ -60,54 +61,53 @@ private:
     }
 
     void handle_request(std::shared_ptr<tcp::socket> socket) {
-    try {
-        boost::asio::streambuf buffer;
-        boost::asio::read_until(*socket, buffer, "\r\n\r\n");
+        try {
+            boost::asio::streambuf buffer;
+            boost::asio::read_until(*socket, buffer, "\r\n\r\n");
 
-        std::istream request_stream(&buffer);
-        std::string request_line;
-        std::getline(request_stream, request_line);
+            std::istream request_stream(&buffer);
+            std::string request_line;
+            std::getline(request_stream, request_line);
 
-        std::string method, path, version;
-        std::istringstream request_line_stream(request_line);
-        request_line_stream >> method >> path >> version;
+            std::string method, path, version;
+            std::istringstream request_line_stream(request_line);
+            request_line_stream >> method >> path >> version;
 
-        // Parse headers
-        std::unordered_map<std::string, std::string> headers;
-        std::string header_line;
-        while (std::getline(request_stream, header_line) && header_line != "\r") {
-            size_t colon_pos = header_line.find(':');
-            if (colon_pos != std::string::npos) {
-                std::string header_name = header_line.substr(0, colon_pos);
-                std::string header_value = header_line.substr(colon_pos + 2); // Skip ": "
-                headers[header_name] = header_value;
+            std::unordered_map<std::string, std::string> headers;
+            std::string header_line;
+            while (std::getline(request_stream, header_line) && header_line != "\r") {
+                size_t colon_pos = header_line.find(':');
+                if (colon_pos != std::string::npos) {
+                    std::string header_name = header_line.substr(0, colon_pos);
+                    std::string header_value = header_line.substr(colon_pos + 2);
+                    headers[header_name] = header_value;
+                }
             }
-        }
 
-        // Parse body if needed
-        std::string body;
-        if (headers.find("Content-Length") != headers.end()) {
-            size_t content_length = std::stoul(headers["Content-Length"]);
-            std::vector<char> body_buffer(content_length);
-            request_stream.read(body_buffer.data(), content_length);
-            body.assign(body_buffer.begin(), body_buffer.end());
-        }
+            std::string body;
+            if (headers.find("Content-Length") != headers.end()) {
+                size_t content_length = std::stoul(headers["Content-Length"]);
+                std::vector<char> body_buffer(content_length);
+                request_stream.read(body_buffer.data(), content_length);
+                body.assign(body_buffer.begin(), body_buffer.end());
+            }
 
-        std::string response;
-        if (!router_.route(method, path, body, response)) {
-            response = "HTTP/1.1 404 Not Found\r\nContent-Length: 13\r\n\r\n404 Not Found";
-        }
+            std::string response;
+            if (!router_.route(method, path, body, response)) {
+                response = "HTTP/1.1 404 Not Found\r\nContent-Length: 13\r\n\r\n404 Not Found";
+            }
 
-        boost::asio::write(*socket, boost::asio::buffer(response));
-    } catch (std::exception& e) {
-        std::cerr << "Exception in thread: " << e.what() << "\n";
+            boost::asio::write(*socket, boost::asio::buffer(response));
+        } catch (std::exception& e) {
+            std::cerr << "Exception in thread: " << e.what() << "\n";
+        }
     }
-}
 
     boost::asio::io_context io_context_;
     tcp::acceptor acceptor_;
     Router& router_;
 };
+
 
 int main() 
 {

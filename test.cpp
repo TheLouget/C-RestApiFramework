@@ -4,7 +4,7 @@
 
 void cacat(std::string method,std::string url,std::string& resp)
 {
-    resp="HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, world!";
+    resp="HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/plain\r\n\r\nHello, world!";
 }
 int main()
 {

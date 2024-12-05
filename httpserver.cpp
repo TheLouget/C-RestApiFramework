@@ -1,8 +1,7 @@
 #include "httpserver.h"
 #include <iostream>
 #define REQSIZE 1024
-httpserver::httpserver(unsigned short port, const char *ipaddr):conexiune(port,ipaddr)
-{
+httpserver::httpserver(unsigned short port, const char* ipaddr) : conexiune(port, ipaddr), threadManager(4) {
     conexiune.run();
 }
 
@@ -18,17 +17,15 @@ void httpserver::add_route(std::string method, std::string path, std::function<v
         this->routes.emplace(method+" "+path,handler);
     }
 }
-
-void httpserver::run()
-{
-    char *buffer=new char[REQSIZE];
-    while(1)
-    {
-    this->conexiune.acceptconnection();
-    this->conexiune.receive(buffer,REQSIZE);
-    this->handlerequest(buffer);
+void httpserver::run() {
+    while (true) {
+        conexiune.acceptconnection();
+        threadManager.addTask([this]() {
+            char buffer[REQSIZE];
+            conexiune.receive(buffer, REQSIZE);
+            this->handlerequest(buffer);
+        });
     }
-    delete buffer;
 }
 
 void httpserver::handlerequest(char * request)
@@ -46,7 +43,7 @@ void httpserver::handlerequest(char * request)
     }
     std::string response;
     this->route(method,url,response);
-    this->conexiune.sendresponse(response.data());
+    this->conexiune.sendresponse((char*)response.data());
 }
 
 void httpserver::route(std::string method, std::string path,std::string &response)
