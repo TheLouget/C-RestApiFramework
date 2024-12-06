@@ -18,7 +18,7 @@ all: $(TARGET)
 
 # Regula de construire a executabilului
 $(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) -lpugixml
 
 # Regula pentru construirea fișierelor obiect
 %.o: %.cpp

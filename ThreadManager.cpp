@@ -44,8 +44,6 @@ void ThreadManager::executeTasks() {
         std::function<void()> task;
         {
             std::unique_lock<std::mutex> lock(queueMutex);
-
-            // Așteptăm sarcini noi în coadă
             queueCondition.wait(lock, [this]() { return !taskQueue.empty() || stop; });
 
             if (stop && taskQueue.empty()) {
@@ -55,8 +53,6 @@ void ThreadManager::executeTasks() {
             task = taskQueue.front();
             taskQueue.pop();
         }
-
-        // Executăm sarcina în afara blocului critic
         task();
     }
 }

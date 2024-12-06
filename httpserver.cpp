@@ -1,4 +1,5 @@
 #include "httpserver.h"
+#include "HandleRequestManager.h"
 #include <iostream>
 #define REQSIZE 1024
 httpserver::httpserver(unsigned short port, const char* ipaddr) : conexiune(port, ipaddr), threadManager(4) {
@@ -28,23 +29,43 @@ void httpserver::run() {
     }
 }
 
-void httpserver::handlerequest(char * request)
-{
-    int i=0;
-    std::string method,url;
-    char *token;
-    token = strtok(request, " ");
-    if (token != NULL) {
-        method=token;
+void httpserver::handlerequest(char* request) {
+    std::string method, url;
+    HandleRequestManager requestManager;
+    if (!requestManager.parse_request(request, method, url)) {
+        std::cerr << "Eroare la parsarea cererii\n";
+        return;
     }
-    token = strtok(NULL, " ");
-    if (token != NULL) {
-        url=token;
+
+    if (requestManager.is_favicon(url)) {
+        requestManager.handle_favicon(url);
+        return;
     }
+
     std::string response;
+    if(method=="GET")
+    {
+        if (url == "/json") {
+        requestManager.handle_json_response(method, url, response);
+        }
+        else if (url == "/xml") {
+            requestManager.handle_xml_response(method, url, response);
+        }
+    }
+    else if (method=="POST")
+    {
+        requestManager.handle_post(method, url, response);
+    }
+    else {
+        response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 15\r\n\r\nRoute not found";
+    }
     this->route(method,url,response);
     this->conexiune.sendresponse((char*)response.data());
+   
 }
+
+
+
 
 void httpserver::route(std::string method, std::string path,std::string &response)
 {
