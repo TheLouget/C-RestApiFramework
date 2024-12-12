@@ -32,8 +32,11 @@ void httpserver::run() {
 void httpserver::handlerequest(char* request) {
     std::string method, url;
     HandleRequestManager requestManager;
-    if (!requestManager.parse_request(request, method, url)) {
-        std::cerr << "Eroare la parsarea cererii\n";
+    if (requestManager.parse_request(request, method, url)) {
+        std::string response;
+        response = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nContent-Length: 17\r\n\r\n";
+        this->route(method,url,response);
+        this->conexiune.sendresponse((char*)response.data());
         return;
     }
 
@@ -45,10 +48,10 @@ void httpserver::handlerequest(char* request) {
     std::string response;
     if(method=="GET")
     {
-        if (url == "/json") {
+        if (!strstr(url.c_str(),"/json")) {
         requestManager.handle_json_response(method, url, response);
         }
-        else if (url == "/xml") {
+        else if (!strstr(url.c_str(),"/xml")) {
             requestManager.handle_xml_response(method, url, response);
         }
     }
@@ -56,8 +59,17 @@ void httpserver::handlerequest(char* request) {
     {
         requestManager.handle_post(method, url, response);
     }
+    else if(method=="HEAD")
+    {
+        requestManager.handle_head(method, url, response);
+    }
+    else if (method == "PUT") {
+        requestManager.handle_put(method, url, response);
+    } else if (method == "DELETE") {
+       requestManager.handle_delete(method, url, response);
+    }
     else {
-        response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 15\r\n\r\nRoute not found";
+        response ="HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 15\r\n\r\nRoute not found\n\r";
     }
     this->route(method,url,response);
     this->conexiune.sendresponse((char*)response.data());
