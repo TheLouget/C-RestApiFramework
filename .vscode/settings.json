@@ -115,6 +115,19 @@
     "streambuf": "cpp",
     "thread": "cpp",
     "typeinfo": "cpp",
-    "valarray": "cpp"
+    "valarray": "cpp",
+    "csignal": "cpp",
+    "any": "cpp",
+    "bitset": "cpp",
+    "complex": "cpp",
+    "coroutine": "cpp",
+    "list": "cpp",
+    "set": "cpp",
+    "optional": "cpp",
+    "source_location": "cpp",
+    "future": "cpp",
+    "cinttypes": "cpp",
+    "typeindex": "cpp",
+    "variant": "cpp"
   }
 }
