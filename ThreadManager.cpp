@@ -2,7 +2,6 @@
 #include <stdexcept>
 
 ThreadManager::ThreadManager(size_t num_threads) : running(false) {
-    // Initialize synchronization primitives
     if (pthread_mutex_init(&queueMutex, nullptr) != 0) {
         throw std::runtime_error("Failed to initialize mutex");
     }
@@ -12,7 +11,6 @@ ThreadManager::ThreadManager(size_t num_threads) : running(false) {
         throw std::runtime_error("Failed to initialize condition variable");
     }
     
-    // Reserve space for threads
     threads.resize(num_threads);
 }
 
@@ -25,10 +23,8 @@ ThreadManager::~ThreadManager() {
 void ThreadManager::start() {
     running = true;
     
-    // Create the worker threads
     for (size_t i = 0; i < threads.size(); ++i) {
         if (pthread_create(&threads[i], nullptr, workerFunction, this) != 0) {
-            // If thread creation fails, stop everything and throw
             stop();
             throw std::runtime_error("Failed to create thread");
         }
@@ -41,12 +37,10 @@ void ThreadManager::stop() {
     pthread_cond_broadcast(&condition);
     pthread_mutex_unlock(&queueMutex);
     
-    // Wait for all threads to finish
     for (pthread_t& thread : threads) {
         pthread_join(thread, nullptr);
     }
     
-    // Clear any remaining tasks
     while (!taskQueue.empty()) {
         taskQueue.pop();
     }
@@ -74,18 +68,15 @@ void ThreadManager::workerLoop() {
             pthread_cond_wait(&condition, &queueMutex);
         }
         
-        // Check if we should exit
         if (!running && taskQueue.empty()) {
             pthread_mutex_unlock(&queueMutex);
             break;
         }
         
-        // Get task from queue
         task = std::move(taskQueue.front());
         taskQueue.pop();
         pthread_mutex_unlock(&queueMutex);
         
-        // Execute the task
         task();
     }
 }

@@ -1,4 +1,3 @@
-
 #include "connection.h"
 #include <stdlib.h>
 Connection::Connection(unsigned short port, const char *ipaddr)
@@ -31,22 +30,23 @@ void Connection::run()
 
 }
 
-void Connection::acceptconnection()
+int Connection::acceptconnection(struct sockaddr_in* client_addr)
 {
     int client_size = sizeof(client_addr);
-    this->clientsock= accept(this->serversock, (struct sockaddr*)&client_addr, (socklen_t*)&client_size);
+    int clientsock= accept(this->serversock, (struct sockaddr*)client_addr, (socklen_t*)&client_size);
  
-    if (this->clientsock < 0){
+    if (clientsock < 0){
         printf("Can't accept\n");
-        return ;
+        return clientsock;
     }
-    printf("Client connected at IP: %s and port: %i\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
- 
+    printf("Client connected at IP: %s and port: %i\n", inet_ntoa(client_addr->sin_addr), ntohs(client_addr->sin_port));
+    
+    return clientsock;
 }
 
-void Connection::receive(char* client_message, int nrofbytes) {
+void Connection::receive(char* client_message, int nrofbytes,int clientsock) {
     memset(client_message, '\0', nrofbytes);
-    ssize_t bytes_received = recv(this->clientsock, client_message, nrofbytes, 0);
+    ssize_t bytes_received = recv(clientsock, client_message, nrofbytes, 0);
     if (bytes_received < 0) {
         printf("Couldn't receive\n");
         return;
@@ -54,12 +54,12 @@ void Connection::receive(char* client_message, int nrofbytes) {
         printf("Msg from client: %s\n", client_message);
 }
 
-void Connection::sendresponse(char * server_message)
+void Connection::sendresponse(char * server_message,int client_sock)
 {
     printf("%s",server_message);
-    if (send(this->clientsock, server_message, strlen(server_message), 0) < 0){
+    if (send(client_sock, server_message, strlen(server_message), 0) < 0){
         printf("Can't send\n");
         return ;
     }
-    close(this->clientsock);
+    close(client_sock);
 }
