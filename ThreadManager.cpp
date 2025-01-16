@@ -1,58 +1,91 @@
 #include "ThreadManager.h"
-#include <iostream>
+#include <stdexcept>
 
-ThreadManager::ThreadManager(int numThreads) : numThreads(numThreads), stop(false) {
-    for (int i = 0; i < numThreads; ++i) {
-        pthread_t thread;
-        if (pthread_create(&thread, nullptr, ThreadManager::threadFunc, this) != 0) {
-            std::cerr << "Failed to create thread " << i << std::endl;
-        }
-        threads.push_back(thread);
+ThreadManager::ThreadManager(size_t num_threads) : running(false) {
+    // Initialize synchronization primitives
+    if (pthread_mutex_init(&queueMutex, nullptr) != 0) {
+        throw std::runtime_error("Failed to initialize mutex");
     }
+    
+    if (pthread_cond_init(&condition, nullptr) != 0) {
+        pthread_mutex_destroy(&queueMutex);
+        throw std::runtime_error("Failed to initialize condition variable");
+    }
+    
+    // Reserve space for threads
+    threads.resize(num_threads);
 }
 
 ThreadManager::~ThreadManager() {
-    stopAllThreads();
+    stop();
+    pthread_mutex_destroy(&queueMutex);
+    pthread_cond_destroy(&condition);
+}
+
+void ThreadManager::start() {
+    running = true;
+    
+    // Create the worker threads
+    for (size_t i = 0; i < threads.size(); ++i) {
+        if (pthread_create(&threads[i], nullptr, workerFunction, this) != 0) {
+            // If thread creation fails, stop everything and throw
+            stop();
+            throw std::runtime_error("Failed to create thread");
+        }
+    }
+}
+
+void ThreadManager::stop() {
+    pthread_mutex_lock(&queueMutex);
+    running = false;
+    pthread_cond_broadcast(&condition);
+    pthread_mutex_unlock(&queueMutex);
+    
+    // Wait for all threads to finish
+    for (pthread_t& thread : threads) {
+        pthread_join(thread, nullptr);
+    }
+    
+    // Clear any remaining tasks
+    while (!taskQueue.empty()) {
+        taskQueue.pop();
+    }
 }
 
 void ThreadManager::addTask(std::function<void()> task) {
-    std::lock_guard<std::mutex> lock(queueMutex);
-    taskQueue.push(task);
-    queueCondition.notify_one();
+    pthread_mutex_lock(&queueMutex);
+    taskQueue.push(std::move(task));
+    pthread_cond_signal(&condition);
+    pthread_mutex_unlock(&queueMutex);
 }
 
-void ThreadManager::stopAllThreads() {
-    {
-        std::lock_guard<std::mutex> lock(queueMutex);
-        stop = true;
-    }
-    queueCondition.notify_all();
-
-    for (pthread_t thread : threads) {
-        pthread_join(thread, nullptr);
-    }
-}
-
-void* ThreadManager::threadFunc(void* arg) {
+void* ThreadManager::workerFunction(void* arg) {
     ThreadManager* manager = static_cast<ThreadManager*>(arg);
-    manager->executeTasks();
+    manager->workerLoop();
     return nullptr;
 }
 
-void ThreadManager::executeTasks() {
+void ThreadManager::workerLoop() {
     while (true) {
         std::function<void()> task;
-        {
-            std::unique_lock<std::mutex> lock(queueMutex);
-            queueCondition.wait(lock, [this]() { return !taskQueue.empty() || stop; });
-
-            if (stop && taskQueue.empty()) {
-                break;
-            }
-
-            task = taskQueue.front();
-            taskQueue.pop();
+        
+        pthread_mutex_lock(&queueMutex);
+        while (taskQueue.empty() && running) {
+            pthread_cond_wait(&condition, &queueMutex);
         }
+        
+        // Check if we should exit
+        if (!running && taskQueue.empty()) {
+            pthread_mutex_unlock(&queueMutex);
+            break;
+        }
+        
+        // Get task from queue
+        task = std::move(taskQueue.front());
+        taskQueue.pop();
+        pthread_mutex_unlock(&queueMutex);
+        
+        // Execute the task
         task();
     }
 }

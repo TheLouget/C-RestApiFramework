@@ -17,6 +17,10 @@ int main() {
         HandleRequestManager manager;
         manager.handle_xml_response(method, url, resp);
     });
+    
+    server.add_route("GET", "/hello", [](std::string method, std::string url, std::string& resp) {
+        resp="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\nDate: Tue, 16 Jan 2025 12:00:00 GMT\r\n\r\nHello, World!";
+    });
 
     server.add_route("POST", "/submit", [](std::string method, std::string url, std::string& resp) {
         HandleRequestManager manager;

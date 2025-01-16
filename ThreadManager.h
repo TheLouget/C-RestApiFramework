@@ -1,29 +1,42 @@
-#ifndef THREADMANAGER_H
-#define THREADMANAGER_H
+// ThreadManager.h
+#ifndef THREAD_MANAGER_H
+#define THREAD_MANAGER_H
 
 #include <pthread.h>
 #include <queue>
 #include <functional>
-#include <vector>
-#include <mutex>
-#include <condition_variable>
 
 class ThreadManager {
 public:
-    ThreadManager(int numThreads);
+    ThreadManager(size_t num_threads = 4);
     ~ThreadManager();
+    
+    // Add a task to the queue
     void addTask(std::function<void()> task);
-    void stopAllThreads();
+    
+    // Start the thread pool
+    void start();
+    
+    // Stop the thread pool
+    void stop();
 
 private:
-    static void* threadFunc(void* arg);
-    int numThreads;
+    // Thread pool status
+    bool running;
+    
+    // Thread pool and task queue
     std::vector<pthread_t> threads;
     std::queue<std::function<void()>> taskQueue;
-    std::mutex queueMutex;
-    std::condition_variable_any queueCondition;
-    bool stop;
-    void executeTasks();
+    
+    // Synchronization primitives
+    pthread_mutex_t queueMutex;
+    pthread_cond_t condition;
+    
+    // Thread worker function
+    static void* workerFunction(void* arg);
+    
+    // Helper method that contains the main worker loop
+    void workerLoop();
 };
 
-#endif
+#endif // THREAD_MANAGER_H

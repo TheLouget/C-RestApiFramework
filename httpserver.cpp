@@ -2,7 +2,7 @@
 #include "HandleRequestManager.h"
 #include <iostream>
 #define REQSIZE 1024
-httpserver::httpserver(unsigned short port, const char* ipaddr) : conexiune(port, ipaddr), threadManager(4) {
+httpserver::httpserver(unsigned short port, const char* ipaddr) : conexiune(port, ipaddr){
     conexiune.run();
 }
 
@@ -21,13 +21,14 @@ void httpserver::add_route(std::string method, std::string path, std::function<v
 void httpserver::run() {
     while (true) {
         conexiune.acceptconnection();
-        threadManager.addTask([this]() {
             char buffer[REQSIZE];
             conexiune.receive(buffer, REQSIZE);
-            this->handlerequest(buffer);
-        });
+
+            threadManager.addTask([this,buffer]{
+                this->handlerequest((char*)buffer);
+            });
+        }
     }
-}
 
 void httpserver::handlerequest(char* request) {
     std::string method, url;
