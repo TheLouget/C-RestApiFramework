@@ -7,6 +7,11 @@ httpserver::httpserver(unsigned short port, const char* ipaddr) : conexiune(port
     threadManager.start();
 }
 
+httpserver::~httpserver()
+{
+    pthread_mutex_destroy(&routesMutex);
+}
+
 void httpserver::add_route(std::string method, std::string path, std::function<void(std::string, std::string,std::string&)> handler)
 {
     if(this->routes.find(method+" "+path)!=this->routes.end())

@@ -1,4 +1,4 @@
-// ThreadManager.h
+
 #ifndef THREAD_MANAGER_H
 #define THREAD_MANAGER_H
 
