@@ -52,14 +52,27 @@ void Connection::receive(char* client_message, int nrofbytes,int clientsock) {
         return;
     }
         printf("Msg from client: %s\n", client_message);
+        printf("Bytes received: %ld\n", bytes_received);
 }
+void Connection::sendresponse(char* server_message, int client_sock) {
+    printf("Response being sent to client:\n%s\n", server_message);
 
-void Connection::sendresponse(char * server_message,int client_sock)
-{
-    printf("%s",server_message);
-    if (send(client_sock, server_message, strlen(server_message), 0) < 0){
-        printf("Can't send\n");
-        return ;
+    int total_sent = 0;
+    int message_length = strlen(server_message);
+    printf("Message length: %d\n", message_length);
+
+    while (total_sent < message_length) {
+        int bytes_sent = send(client_sock, server_message + total_sent, message_length - total_sent, 0);
+        if (bytes_sent < 0) {
+            perror("Failed to send response");
+            close(client_sock);
+            return;
+        }
+        total_sent += bytes_sent;
+        printf("Bytes sent: %d, Total sent: %d\n", bytes_sent, total_sent);
     }
+
+    printf("Response fully sent.\n");
     close(client_sock);
+    printf("Connection closed.\n");
 }

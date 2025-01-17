@@ -12,8 +12,6 @@ public:
         nlohmann::json j(data);
         return j.dump();
     }
-
-
     static std::unordered_map<std::string, std::string> deserializeFromJson(const std::string& jsonStr) {
         nlohmann::json j = nlohmann::json::parse(jsonStr);
         return j.get<std::unordered_map<std::string, std::string>>();

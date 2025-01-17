@@ -1,4 +1,5 @@
 #include"HandleRequestManager.h"
+#include"httpserver.h"
 
 bool HandleRequestManager::parse_request(char* request, std::string& method, std::string& url)
   {
@@ -23,7 +24,7 @@ bool HandleRequestManager::parse_request(char* request, std::string& method, std
         return true;
 }
 
- void HandleRequestManager::handle_json_response(std::string method, std::string url, std::string& resp)
+ void HandleRequestManager::handle_json_get(std::string method, std::string url, std::string& resp)
 {
         std::unordered_map<std::string, std::string> data = {
             {"message", "Hello, world!"},
@@ -42,7 +43,7 @@ bool HandleRequestManager::parse_request(char* request, std::string& method, std
         std::cout<<"\n";   
 }
 
-    void HandleRequestManager::handle_xml_response(std::string method, std::string url, std::string& resp) 
+    void HandleRequestManager::handle_xml_get(std::string method, std::string url, std::string& resp) 
     {
         std::unordered_map<std::string, std::string> data = {
             {"message", "Hello, world!"},
@@ -56,31 +57,114 @@ bool HandleRequestManager::parse_request(char* request, std::string& method, std
                Serializer::serializeToXml(data);
 }
 
+void HandleRequestManager::handle_post(std::string method, std::string url, std::string& resp) {
+    if (url.find("xml") != std::string::npos) {
+        std::unordered_map<std::string, std::string> responseData = {
+            {"status", "success"},
+            {"message", "Data received successfully"},
+            {"timestamp", std::to_string(time(nullptr))}
+        };
 
-    void HandleRequestManager::handle_post(std::string method, std::string url, std::string& resp) {
-        std::string htmlContent = R"(
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>POST Response</title>
-            </head>
-            <body>
-                <h1>POST Received</h1>
-                <p>Data received and processed ig.</p>
-            </body>
-            </html>
-        )";
+        std::string xmlPayload = Serializer::serializeToXml(responseData);
+        resp = "HTTP/1.1 201 Created\r\n"
+               "Content-Type: application/xml\r\n"
+               "Content-Length: " + std::to_string(xmlPayload.length()) + "\r\n\r\n" +
+               xmlPayload;
+    } else {
+        std::unordered_map<std::string, std::string> responseData = {
+            {"status", "success"},
+            {"message", "Data received successfully"},
+            {"timestamp", std::to_string(time(nullptr))}
+        };
+
+        resp = "HTTP/1.1 201 Created\r\n"
+               "Content-Type: application/json\r\n"
+               "Content-Length: " + std::to_string(Serializer::serializeToJson(responseData).length()) + "\r\n\r\n" +
+               Serializer::serializeToJson(responseData);
+    }
+}
+
+void HandleRequestManager::handle_put(std::string method, std::string url, std::string& resp) {
+    if (url.find("xml") != std::string::npos) {
+        std::unordered_map<std::string, std::string> data = {
+            {"message", "Resource updated successfully"},
+            {"status", "200 OK"},
+            {"resource", url}
+        };
+
+        std::string xmlPayload = Serializer::serializeToXml(data);
+        resp = "HTTP/1.1 200 OK\r\n"
+               "Content-Type: application/xml\r\n"
+               "Content-Length: " + std::to_string(xmlPayload.length()) + "\r\n"
+               "Connection: close\r\n\r\n" + xmlPayload;
+
+        std::cout << "PUT XML response generated for: " << url << "\n";
+    } else {
+        std::unordered_map<std::string, std::string> data = {
+            {"message", "Resource updated successfully"},
+            {"status", "200 OK"},
+            {"resource", url}
+        };
+
+        std::string jsonPayload = Serializer::serializeToJson(data);
+        resp = "HTTP/1.1 200 OK\r\n"
+               "Content-Type: application/json\r\n"
+               "Content-Length: " + std::to_string(jsonPayload.size()) + "\r\n"
+               "Connection: close\r\n\r\n" + jsonPayload;
+
+        std::cout << "PUT response generated for: " << url << "\n";
+    }
+}
+void HandleRequestManager::handle_delete(httpserver* server, std::string method, std::string url, std::string& resp) {
+    std::unordered_map<std::string, std::string> data = {
+        {"message", "Resource deleted successfully"},
+        {"status", "200 OK"},
+        {"resource", url}
+    };
+
+    std::cout << "Processing DELETE for URL: " << url << "\n";
+
+    if (url.find("xml") != std::string::npos) {
+        std::string xmlPayload = Serializer::serializeToXml(data);
+        std::cout << "Generated XML Payload: " << xmlPayload << "\n";
+        std::cout << "XML Payload Length: " << xmlPayload.length() << "\n";
 
         resp = "HTTP/1.1 200 OK\r\n"
-               "Content-Type: text/html\r\n"
-               "Content-Length: " + std::to_string(htmlContent.size()) + "\r\n"
-               "Connection: close\r\n\r\n" + htmlContent;
-    }
+               "Content-Type: application/xml\r\n"
+               "Content-Length: " + std::to_string(xmlPayload.length()) + "\r\n"
+               "Connection: close\r\n\r\n" + xmlPayload;
+        std::cout << "DELETE XML response generated.\n";
+    } else {
+        std::string jsonPayload = Serializer::serializeToJson(data);
+        std::cout << "Generated JSON Payload: " << jsonPayload << "\n";
+        std::cout << "JSON Payload Length: " << jsonPayload.size() << "\n";
 
-    void HandleRequestManager::handle_head(std::string method, std::string url, std::string &resp)
-    {
+        resp = "HTTP/1.1 200 OK\r\n"
+               "Content-Type: application/json\r\n"
+               "Content-Length: " + std::to_string(jsonPayload.size()) + "\r\n"
+               "Connection: close\r\n\r\n" + jsonPayload;
+        std::cout << "DELETE JSON response generated.\n";
+    }
+    bool deleted = server->delete_route(method, url);
+    if (deleted) {
+        std::cout << "Route successfully deleted.\n";
+    } else {
+        std::cout << "Route not found. Nothing to delete.\n";
+    }
+    server->print_routes();
+}
+
+
+void HandleRequestManager::handle_head(std::string method, std::string url, std::string &resp) {
+    if (url.find("xml") != std::string::npos) {
+        std::unordered_map<std::string, std::string> data = {
+            {"status", "200 OK"}
+        };
+
+        resp = "HTTP/1.1 200 OK\r\n"
+               "Content-Type: application/xml\r\n"
+               "Content-Length: " + std::to_string(Serializer::serializeToXml(data).length()) + "\r\n\r\n";
+    } else {
         std::unordered_map<std::string, std::string> data = {
             {"status", "200 OK"}
         };
@@ -89,37 +173,4 @@ bool HandleRequestManager::parse_request(char* request, std::string& method, std
                "Content-Type: application/json\r\n"
                "Content-Length: " + std::to_string(Serializer::serializeToJson(data).length()) + "\r\n\r\n";
     }
-
-void HandleRequestManager::handle_put(std::string method, std::string url, std::string& resp) {
-    // Exemplu de actualizare a unei resurse
-    std::unordered_map<std::string, std::string> data = {
-        {"message", "Resource updated successfully"},
-        {"status", "200 OK"},
-        {"resource", url}
-    };
-
-    std::string jsonPayload = Serializer::serializeToJson(data);
-    resp = "HTTP/1.1 200 OK\r\n"
-           "Content-Type: application/json\r\n"
-           "Content-Length: " + std::to_string(jsonPayload.size()) + "\r\n"
-           "Connection: close\r\n\r\n" + jsonPayload;
-
-    std::cout << "PUT response generated for: " << url << "\n";
-}
-
-void HandleRequestManager::handle_delete(std::string method, std::string url, std::string& resp) {
-    // Exemplu de ștergere a unei resurse
-    std::unordered_map<std::string, std::string> data = {
-        {"message", "Resource deleted successfully"},
-        {"status", "200 OK"},
-        {"resource", url}
-    };
-
-    std::string jsonPayload = Serializer::serializeToJson(data);
-    resp = "HTTP/1.1 200 OK\r\n"
-           "Content-Type: application/json\r\n"
-           "Content-Length: " + std::to_string(jsonPayload.size()) + "\r\n"
-           "Connection: close\r\n\r\n" + jsonPayload;
-
-    std::cout << "DELETE response generated for: " << url << "\n";
 }
